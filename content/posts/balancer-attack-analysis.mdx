@@ -14,14 +14,14 @@ In this blog, I will:
 - analyze the copycats,  
 - and discuss how to profit **legally** (not by hacking!).
 <p align="center">
-  <img src="../../public/balancer/balancer-tweet.png" width={500} />
+  <img src="/balancer/balancer-tweet.png" width={500} />
 </p>
 
 ## Attack Analysis
 Initially, several security researchers claimed the exploit was merely an access-control bug similar to the Abracadabra attack (e.g., [DeFimon](https://x.com/DefimonAlerts/status/1985261932220239979), [MyWebacy](https://x.com/mywebacy/status/1985767095381213514)).
 
 <p align="center">
-  <img src="../../public/balancer/defimon.png" width={500} />
+  <img src="/balancer/defimon.png" width={500} />
 </p>
 
 However, the transactions they posted were just the **withdrawals**, not the actual exploit. For example:
@@ -57,7 +57,7 @@ scaled_amount = (raw_amount * scaling_factor) / 10^{18}
 ````
 
 <p align="center">
-  <img src="../../public/balancer/defimon.png" width={800} />
+  <img src="/balancer/defimon.png" width={800} />
 </p>
 
 Here comes the problem:
@@ -72,15 +72,15 @@ Now, let's check into the attack transaction itself. We can take 0xe9245fb124c3a
 ### 1. Calculation
 The attacker uses a standalone contract to simulate the swap states to trigger the exactly precision loss. This contracts' code is copied from the Balancers' own contracts because it also contains some custom errors in Balancers' code.
 <p align="center">
-  <img src="../../public/balancer/calculation.png" width={500} />
+  <img src="/balancer/calculation.png" width={500} />
 </p>
 ### 2. Manipulation
 The attacker uses "flash-minted" LP token to manipulate the pool state by swapping BPT → token1 and BPT → token2 repeatedly, making the pools' raw balances very small (in the order of 10_000\~100_000). As the flash-minted BPT cannot be withdrawn, the attacker needs to swap them to token1 and token2. After manipulation, as shown in the figure below, the raw balances of token1 and token2 are very small (40,000). This is the first parameter (we can call it $b$).
 <p align="center">
-  <img src="../../public/balancer/manipulation.png" width={500} />
+  <img src="/balancer/manipulation.png" width={500} />
 </p>
 <p align="center">
-  <img src="../../public/balancer/after-manipulation.png" width={800} />
+  <img src="/balancer/after-manipulation.png" width={800} />
 </p>
 
 
@@ -98,7 +98,7 @@ Specifically, one iteration contains 3 swaps:
 2. `token1 → token2`: swap $small$ tokens to trigger precision loss
 3. `token2 → token1`: swap ~90% back to restore balance
 
-![alt text](../../public/balancer/precision-loss.png)
+![alt text](/balancer/precision-loss.png)
 
 Each loop caused a small but compounding imbalance — roughly proportional to $1 / small$ — steadily draining LPs.
 The attacker repeated this until the profit margin was large enough.
@@ -107,7 +107,7 @@ The attacker repeated this until the profit margin was large enough.
 ### repay
 The attacker finally swaps the remaining token1 and token2 back to BPT to repay the flash-minted LP tokens. This process also needs to be gentle to avoid large price impact. This is part of the withdrawing process as loss is already realized.
 <p align="center">
-  <img src="../../public/balancer/repay.png" width={800} />
+  <img src="/balancer/repay.png" width={800} />
 </p>
 
 After that, they withdrew all tokens from internal balances — the withdrawal many researchers initially misidentified as the attack itself.
@@ -129,13 +129,13 @@ Interestingly, the attacker, while creating this masterpiece hack, does not appe
 - The attacker left some debugging code (foundry logs) in the execution contract which could have been deleted.
 - The hacker took quite a long time (around 20 minutes) to finish all the attacks across ethereum, optimism, arbitrum, polygon, etc.
 <p align="center">
-  <img src="../../public/balancer/logs.png" width={400} />
+  <img src="/balancer/logs.png" width={400} />
 </p>
 
 ### Back-running - Copycats
 One noting thing is that the attack is too complicated to implement because all the steps need to be precisely calculated to trigger the precision loss. Despite this, [the very first copycat](https://etherscan.io/tx/0x14fb45dd869208edffcb221add152a20292283be172ddb6ccfd2d73e3710b6f4) (by the way, he seems to be a notorious copycat, who also copied the squid bridge attack recently) started exploiting within one hour after the main attack (07:46 UTC -> 08:39 UTC)
 <p align="center">
-  <img src="../../public/balancer/copycat1.png" width={600} />
+  <img src="/balancer/copycat1.png" width={600} />
 </p>
 How could this be possible? After checking the log of the copycat's transaction, you can find all the logging info from the attacker's contract, meaning the copycat just copied the attacker's contract code and deployed it by himself! So just by replacing the pool address and sender address, the copycat can launch the same attack, with super low effort.
 
@@ -145,7 +145,7 @@ In the following several hours, a large number of copycats appeared, exploiting 
 ## Fork Fallout
 Next the disaster comes to Balancer forks. As Balancer is open source, several forks have been created in the past years, including Beets, BEX, PHUX, etc. According to DeFiLlama's data, there are 27 Balancer V2 forks. (however, only V2 stable pools are vulnerable)
 <p align="center">
-  <img src="../../public/balancer/llama-forks.png" width={600} />
+  <img src="/balancer/llama-forks.png" width={600} />
 </p>
 The largest fork, BEX, was also affected and exploited for around $13 million. BEX is the largest DEX on Berachain and has a large number of stable pools. As a result, berachain paused their chain to avoid attackers bridging assets out. Other forks, such as Beets on Sonic & Optimism, also suffered from the same precision loss attack.
 
@@ -153,7 +153,7 @@ It was a dark day for DeFi, a single precision loss bug replicated across multip
 Even ETH’s price dropped shortly after, possibly related.
 
 <p align="center">
-  <img src="../../public/balancer/eth-price.png" width={600} />
+  <img src="/balancer/eth-price.png" width={600} />
 </p>
 
 ### Pausing
