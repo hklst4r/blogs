@@ -48,12 +48,12 @@ For example, if `1 wstETH = 1.05 ETH`, then:
 - scaling factor of `wstETH` = 1.05  
 - scaling factor of `ETH` = 1.0  
 
-These are stored as integers in 1e18 precision (e.g., `1.05 × 10¹⁸ = 105e16`).
+These are stored as integers in 1e18 precision (e.g., `1.05 × 1e18 = 105e16`).
 
 The scaled amount is calculated as:
 
 ```math
-scaled_amount = (raw_amount * scaling_factor) / 10^{18}
+scaled_amount = (raw_amount * scaling_factor) / 1e18
 ````
 
 <p align="center">
@@ -75,7 +75,7 @@ The attacker uses a standalone contract to simulate the swap states to trigger t
   <img src="/balancer/calculation.png" width={500} />
 </p>
 ### 2. Manipulation
-The attacker uses "flash-minted" LP token to manipulate the pool state by swapping BPT → token1 and BPT → token2 repeatedly, making the pools' raw balances very small (in the order of 10_000\~100_000). As the flash-minted BPT cannot be withdrawn, the attacker needs to swap them to token1 and token2. After manipulation, as shown in the figure below, the raw balances of token1 and token2 are very small (40,000). This is the first parameter (we can call it $b$).
+The attacker uses "flash-minted" LP token to manipulate the pool state by swapping BPT → token1 and BPT → token2 repeatedly, making the pools' raw balances very small (in the order of 10_000\~100_000). As the flash-minted BPT cannot be withdrawn, the attacker needs to swap them to token1 and token2. After manipulation, as shown in the figure below, the raw balances of token1 and token2 are very small (40,000). This is the first parameter (we can call it b).
 <p align="center">
   <img src="/balancer/manipulation.png" width={500} />
 </p>
@@ -89,18 +89,18 @@ The attacker uses "flash-minted" LP token to manipulate the pool state by swappi
 The attacker repeatedly swapped between the two tokens to amplify the precision loss.
 They optimized a variable $small$ satisfying:
 ```math
-maximize\{ (small * scaling_factor) \bmod 10^{18} \}
+maximize{ (small * scaling_factor) % 1e18 }
 ```
 This will create the maximum precision loss when swapping $small$ amount of token1 to token2 or vice versa.
 Specifically, one iteration contains 3 swaps:
 
-1. `token1 → token2`: swap $(b - small - 1)$ tokens to create the precision condition
-2. `token1 → token2`: swap $small$ tokens to trigger precision loss
+1. `token1 → token2`: swap (b - small - 1) tokens to create the precision condition
+2. `token1 → token2`: swap (small) tokens to trigger precision loss
 3. `token2 → token1`: swap ~90% back to restore balance
 
 ![alt text](/balancer/precision-loss.png)
 
-Each loop caused a small but compounding imbalance — roughly proportional to $1 / small$ — steadily draining LPs.
+Each loop caused a small but compounding imbalance — roughly proportional to 1 / small — steadily draining LPs.
 The attacker repeated this until the profit margin was large enough.
 
 
