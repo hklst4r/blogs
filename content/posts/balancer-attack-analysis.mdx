@@ -1,11 +1,11 @@
 ---
 title: Balancer Attack Analysis
-description: 
+description: Balancer Attack Analysis
 date: "2025-07-03"
 ---
 
 Yesterday, on **July 3, 2025**, Balancer was hacked for over **$100 million** due to a precision-loss bug.  
-While the official post-mortem hasn’t been released yet, most pools are already [paused or drained](https://x.com/Balancer/status/1985390307245244573).  
+While the official post-mortem hasn't been released yet, most pools are already [paused or drained](https://x.com/Balancer/status/1985390307245244573).  
 This post is my own analysis of the exploit.
 
 In this blog, I will:
@@ -75,7 +75,7 @@ The attacker uses a standalone contract to simulate the swap states to trigger t
   <img src="../../public/balancer/calculation.png" width={500} />
 </p>
 ### 2. Manipulation
-The attacker uses "flash-minted" LP token to manipulate the pool state by swapping BPT → token1 and BPT → token2 repeatedly, making the pools' raw balances very small (in the order of 10_000\~100_000). As the flash-minted BPT cannot be withdrawn, the attacker needs to swap them to token1 and token2. After manipulation, as shown in the figure below, the raw balances of token1 and token2 are very small (40,000). This is the first parameter (we can call it $b_{init}$).
+The attacker uses "flash-minted" LP token to manipulate the pool state by swapping BPT → token1 and BPT → token2 repeatedly, making the pools' raw balances very small (in the order of 10_000\~100_000). As the flash-minted BPT cannot be withdrawn, the attacker needs to swap them to token1 and token2. After manipulation, as shown in the figure below, the raw balances of token1 and token2 are very small (40,000). This is the first parameter (we can call it $b$).
 <p align="center">
   <img src="../../public/balancer/manipulation.png" width={500} />
 </p>
@@ -94,7 +94,7 @@ maximize\{ (small * scaling_factor) \bmod 10^{18} \}
 This will create the maximum precision loss when swapping $small$ amount of token1 to token2 or vice versa.
 Specifically, one iteration contains 3 swaps:
 
-1. `token1 → token2`: swap $(b_{init} - small - 1)$ tokens to create the precision condition
+1. `token1 → token2`: swap $(b - small - 1)$ tokens to create the precision condition
 2. `token1 → token2`: swap $small$ tokens to trigger precision loss
 3. `token2 → token1`: swap ~90% back to restore balance
 
